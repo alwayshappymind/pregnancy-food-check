@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>이거 먹어도 될까?</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700;900&family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@500&display=swap');
+
+:root{
+  --paper:#EFF3EC;
+  --paper-card:#FFFFFF;
+  --ink:#26332B;
+  --ink-soft:#5B6960;
+  --line:#D8DED3;
+  --safe:#2F7A56;
+  --safe-bg:#E4F1E9;
+  --avoid:#AE3A2E;
+  --avoid-bg:#F8E4E1;
+  --unknown:#7A7A7A;
+  --unknown-bg:#EDEDED;
+  --radius:18px;
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  font-family:'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  background:
+    radial-gradient(circle at 1px 1px, rgba(38,51,43,0.05) 1px, transparent 1px) 0 0/22px 22px,
+    var(--paper);
+  color:var(--ink);
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:24px 16px;
+}
+
+.stage{
+  width:100%;
+  max-width:460px;
+  position:relative;
+}
+
+/* ---------- shared ---------- */
+.eyebrow{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:12px;
+  letter-spacing:0.14em;
+  color:var(--ink-soft);
+  text-transform:uppercase;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.eyebrow::before{
+  content:"";
+  width:16px;height:1px;
+  background:var(--ink-soft);
+  display:inline-block;
+}
+
+.card{
+  background:var(--paper-card);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  box-shadow:0 1px 0 rgba(38,51,43,0.04), 0 12px 30px -18px rgba(38,51,43,0.25);
+  padding:32px 26px;
+}
+
+button{font-family:inherit;cursor:pointer;}
+
+/* ---------- SCREEN 1 : SEARCH ---------- */
+#screen-search{animation:fade-in .35s ease;}
+@keyframes fade-in{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+
+.title-block{margin:22px 0 26px;}
+h1{
+  font-family:'Noto Serif KR',serif;
+  font-weight:900;
+  font-size:clamp(28px,7vw,34px);
+  line-height:1.28;
+  margin:10px 0 8px;
+}
+.title-sub{
+  color:var(--ink-soft);
+  font-size:14.5px;
+  line-height:1.6;
+}
+
+.search-row{
+  display:flex;
+  gap:8px;
+  margin-top:6px;
+}
+.search-wrap{
+  flex:1;
+  position:relative;
+  border:1.5px dashed var(--ink);
+  border-radius:12px;
+  background:#FBFCF9;
+}
+.search-wrap input{
+  width:100%;
+  border:none;
+  background:transparent;
+  outline:none;
+  padding:15px 16px;
+  font-size:16px;
+  font-family:inherit;
+  color:var(--ink);
+}
+.search-wrap input::placeholder{color:#9AA69C;}
+.go-btn{
+  border:none;
+  background:var(--ink);
+  color:var(--paper);
+  border-radius:12px;
+  padding:0 20px;
+  font-size:15px;
+  font-weight:700;
+  transition:transform .15s ease, background .15s ease;
+}
+.go-btn:active{transform:scale(0.94);}
+
+.disclaimer{
+  margin-top:28px;
+  font-size:11.5px;
+  color:var(--ink-soft);
+  line-height:1.6;
+  border-top:1px solid var(--line);
+  padding-top:14px;
+}
+
+/* ---------- SCREEN 2 : RESULT ---------- */
+#screen-result{display:none;}
+#screen-result.active{display:block;animation:fade-in .3s ease;}
+
+.back-btn{
+  border:none;background:none;
+  color:var(--ink-soft);
+  font-size:13px;
+  font-family:'IBM Plex Mono',monospace;
+  display:flex;align-items:center;gap:6px;
+  margin-bottom:18px;
+  padding:4px 0;
+}
+.back-btn:hover{color:var(--ink);}
+
+.result-card{
+  text-align:center;
+  padding:36px 26px 30px;
+  position:relative;
+  overflow:hidden;
+}
+
+.query-label{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:12px;
+  color:var(--ink-soft);
+  letter-spacing:0.06em;
+}
+
+.stamp-zone{
+  position:relative;
+  width:150px;height:150px;
+  margin:18px auto 8px;
+}
+.stamp-svg{
+  width:100%;height:100%;
+  opacity:0;
+  transform:scale(1.7) rotate(-14deg);
+}
+.stamp-svg.pop{
+  animation:stamp-down .55s cubic-bezier(.2,1.6,.4,1) forwards;
+}
+@keyframes stamp-down{
+  0%{opacity:0; transform:scale(2.2) rotate(-18deg);}
+  55%{opacity:1; transform:scale(0.92) rotate(-6deg);}
+  75%{transform:scale(1.06) rotate(-9deg);}
+  100%{opacity:1; transform:scale(1) rotate(-7deg);}
+}
+
+.result-word{
+  font-family:'Noto Serif KR',serif;
+  font-weight:900;
+  font-size:26px;
+  margin:4px 0 2px;
+}
+.result-name{
+  font-size:15px;
+  color:var(--ink-soft);
+  margin-bottom:20px;
+}
+
+.result-detail{
+  text-align:left;
+  border-top:1px solid var(--line);
+  padding-top:20px;
+  margin-top:6px;
+}
+.result-detail h3{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:11.5px;
+  letter-spacing:0.08em;
+  color:var(--ink-soft);
+  margin:0 0 8px;
+  text-transform:uppercase;
+}
+.result-detail p{
+  font-size:14.5px;
+  line-height:1.7;
+  margin:0 0 18px;
+  color:var(--ink);
+}
+.result-detail .tip{
+  background:var(--paper);
+  border-radius:12px;
+  padding:14px 16px;
+  font-size:13.5px;
+  line-height:1.65;
+  color:var(--ink-soft);
+}
+
+.ai-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  font-family:'IBM Plex Mono',monospace;
+  font-size:10.5px;
+  letter-spacing:0.05em;
+  color:var(--ink-soft);
+  background:var(--paper);
+  border:1px solid var(--line);
+  border-radius:999px;
+  padding:4px 10px;
+  margin:0 0 18px;
+}
+
+.spinner{
+  width:56px;height:56px;
+  border-radius:50%;
+  border:3px dashed var(--ink-soft);
+  animation:spin 1.1s linear infinite;
+  margin:0 auto;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-text{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:12.5px;
+  color:var(--ink-soft);
+  margin-top:12px;
+}
+
+.retry-btn{
+  width:100%;
+  margin-top:22px;
+  border:1.5px solid var(--ink);
+  background:transparent;
+  color:var(--ink);
+  border-radius:12px;
+  padding:14px;
+  font-size:14.5px;
+  font-weight:700;
+  transition:background .15s ease, color .15s ease;
+}
+.retry-btn:hover{background:var(--ink); color:var(--paper);}
+
+@media (max-width:380px){
+  .card{padding:24px 18px;}
+}
+
+.top-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.settings-btn{
+  border:1px solid var(--line);
+  background:#FBFCF9;
+  border-radius:10px;
+  width:34px;height:34px;
+  font-size:15px;
+  color:var(--ink-soft);
+  transition:border-color .15s ease, color .15s ease;
+}
+.settings-btn:hover{border-color:var(--ink); color:var(--ink);}
+
+.settings-panel{
+  display:none;
+  margin-top:14px;
+  padding:16px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:#FBFCF9;
+}
+.settings-panel.open{display:block;}
+.settings-label{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:11.5px;
+  color:var(--ink-soft);
+  margin:0 0 8px;
+}
+.settings-row{display:flex; gap:8px;}
+.settings-row input{
+  flex:1;
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:10px 12px;
+  font-size:14px;
+  font-family:inherit;
+  background:#fff;
+  outline:none;
+}
+.settings-row input:focus{border-color:var(--ink);}
+.settings-save-btn{
+  border:none;
+  background:var(--ink);
+  color:var(--paper);
+  border-radius:10px;
+  padding:0 16px;
+  font-size:13.5px;
+  font-weight:700;
+}
+.settings-status{
+  font-size:12px;
+  color:var(--ink-soft);
+  margin:8px 0 0;
+}
+.settings-status.warn{color:var(--avoid);}
+.settings-status.ok{color:var(--safe);}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<div class="stage">
+
+  <!-- SCREEN 1: SEARCH -->
+  <div id="screen-search">
+    <div class="top-row">
+      <div class="eyebrow">임산부 식품 확인</div>
+      <button class="settings-btn" id="settings-btn" aria-label="설정" title="API 키 설정">⚙</button>
+    </div>
+
+    <div class="settings-panel" id="settings-panel">
+      <p class="settings-label">Anthropic API 키 (이 기기에만 저장돼요)</p>
+      <div class="settings-row">
+        <input id="api-key-input" type="password" placeholder="sk-ant-..." autocomplete="off">
+        <button class="settings-save-btn" id="settings-save-btn">저장</button>
+      </div>
+      <p class="settings-status" id="settings-status"></p>
+    </div>
+
+    <div class="title-block">
+      <h1>이거,<br>먹어도 될까요?</h1>
+      <p class="title-sub">재료 이름을 적어주세요</p>
+    </div>
+
+    <div class="search-row">
+      <div class="search-wrap">
+        <input id="query-input" type="text" inputmode="search" enterkeyhint="search" placeholder="예: 커피, 초밥, 계란..." autocomplete="off">
+      </div>
+      <button class="go-btn" id="go-btn">확인</button>
+    </div>
+
+    <div class="disclaimer">
+      본 서비스는 일반적인 정보 참고용이며 의학적 진단이나 처방을 대신하지 않습니다. 개인 건강 상태에 따라 다를 수 있으니 정확한 판단은 반드시 산부인과 전문의와 상담하세요. DB에 없는 재료는 두 분이 함께 보는 목록에 저장됩니다.
+    </div>
+  </div>
+
+  <!-- SCREEN 2: RESULT -->
+  <div id="screen-result">
+    <button class="back-btn" id="back-btn">← 다시 검색하기</button>
+    <div class="card result-card">
+      <div class="query-label" id="query-label">// 검색어</div>
+
+      <div class="stamp-zone" id="stamp-zone"></div>
+
+      <div class="result-word" id="result-word"></div>
+      <div class="result-name" id="result-name"></div>
+      <div class="ai-badge" id="ai-badge" style="display:none;">⚡ AI 실시간 답변 · 참고용</div>
+
+      <div class="result-detail">
+        <h3>왜 그런가요</h3>
+        <p id="result-reason"></p>
+        <div class="tip" id="result-tip"></div>
+      </div>
+
+      <button class="retry-btn" id="retry-btn">다른 재료 검색하기</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ---------- DATA ----------
+// result: 'safe' | 'avoid'
+const FOODS = [
+  {names:["커피","카페인","아메리카노","커피믹스","드립커피"], result:"safe", title:"커피 / 카페인 음료",
+    reason:"카페인은 태반을 통과하지만, 하루 총 섭취량을 200mg 이하로 유지하면 안전한 범위로 알려져 있어요.",
+    tip:"원두커피 한 잔(약 95mg) 정도는 괜찮지만, 커피믹스·에너지드링크·초콜릿의 카페인까지 합산해서 하루 200mg을 넘기지 마세요."},
+  {names:["홍차"], result:"safe", title:"홍차",
+    reason:"카페인이 포함되어 있지만 하루 총 카페인 섭취량(200mg 이하) 안에서는 안전해요.",
+    tip:"연하게 우려 하루 1~2잔 정도로 마시고, 다른 카페인 음료와 합산해서 관리하세요."},
+  {names:["녹차"], result:"safe", title:"녹차",
+    reason:"카페인과 탄닌 성분이 있지만 적당량에서는 안전한 것으로 알려져 있어요.",
+    tip:"탄닌이 철분 흡수를 방해할 수 있으니 식사와 시간차를 두고, 하루 1~2잔 이내로 마시세요."},
+  {names:["술","알코올","와인","맥주","소주","막걸리"], result:"avoid", title:"술 / 알코올",
+    reason:"임신 중 안전한 알코올 섭취량은 없는 것으로 알려져 있어요. 태아알코올증후군 등 발달 문제 위험이 보고됩니다.",
+    tip:"소량이라도 피하는 것이 원칙이에요. 이미 마셨다면 자책하기보다 지금부터 중단하고 담당의와 상담하세요."},
+  {names:["초밥","회","생선회","광어회","연어회"], result:"avoid", title:"회 / 초밥(생선)",
+    reason:"익히지 않은 생선은 리스테리아균, 기생충, 노로바이러스 등 감염 위험이 있어요.",
+    tip:"꼭 먹고 싶다면 완전히 익힌 초밥(새우, 장어 등)이나 냉동 처리된 제품 여부를 확인하세요."},
+  {names:["육회","생고기","타르타르"], result:"avoid", title:"육회 / 생고기",
+    reason:"살모넬라, 톡소플라즈마 등 세균·기생충 감염 위험이 커요.",
+    tip:"고기는 중심 온도까지 완전히 익혀 섭취하세요."},
+  {names:["훈제연어","훈제연어냉훈"], result:"avoid", title:"훈제 연어(냉훈제)",
+    reason:"저온에서 조리하는 냉훈제 방식은 가열 과정이 없어 리스테리아균이 남아있을 수 있어요.",
+    tip:"파스타·볶음 등 뜨겁게 완전히 데워 먹으면 위험을 크게 줄일 수 있어요."},
+  {names:["참치캔","참치통조림","가다랑어"], result:"safe", title:"참치 통조림(가다랑어)",
+    reason:"작은 어종이라 수은 함량이 낮은 편이라 안전한 범위로 알려져 있어요.",
+    tip:"그래도 주 2~3회 이내로 섭취량을 제한하는 것을 권장해요."},
+  {names:["참치","황새치","상어","삼치대형","눈다랑어","다랑어"], result:"avoid", title:"대형 참치류(황새치·눈다랑어 등)",
+    reason:"먹이사슬 상위에 있는 대형 어종은 수은이 축적되어 있어 태아 신경발달에 영향을 줄 수 있어요.",
+    tip:"참치캔(가다랑어)처럼 작은 어종으로 대체하는 것이 안전해요."},
+  {names:["고등어"], result:"safe", title:"고등어",
+    reason:"등푸른 생선은 오메가3가 풍부하고, 수은 수준도 안전 범위로 알려져 있어요.",
+    tip:"주 1~2회, 1회 100g 내외로 섭취량을 관리하세요."},
+  {names:["새우"], result:"safe", title:"새우",
+    reason:"완전히 익혀 먹으면 단백질과 필수 영양소를 안전하게 섭취할 수 있어요.",
+    tip:"덜 익은 냉동새우나 생새우초밥은 피하고, 속까지 완전히 익혀 드세요."},
+  {names:["문어","오징어","낙지"], result:"safe", title:"문어 / 오징어(익힌 것)",
+    reason:"완전히 조리된 상태라면 안전하게 섭취할 수 있는 단백질원이에요.",
+    tip:"회로 먹는 것은 피하고, 데치거나 볶아서 드세요."},
+  {names:["게","꽃게"], result:"safe", title:"게(익힌 것)",
+    reason:"완전히 익힌 갑각류는 안전한 단백질 공급원이에요.",
+    tip:"내장(게장, 특히 생게장)은 비가열 상태이므로 별도로 주의가 필요해요."},
+  {names:["생게장","간장게장"], result:"avoid", title:"생 게장(간장게장)",
+    reason:"비가열 상태의 갑각류로 세균·기생충 감염 위험이 있어요.",
+    tip:"꽃게탕처럼 완전히 익힌 형태로 즐기는 것이 안전해요."},
+  {names:["굴","생굴"], result:"avoid", title:"굴(생굴)",
+    reason:"노로바이러스, 비브리오균 등에 오염되어 있을 위험이 있어요.",
+    tip:"굴전, 굴국처럼 완전히 익혀서 섭취하세요."},
+  {names:["브리치즈","카망베르","비살균치즈","소프트치즈"], result:"avoid", title:"비살균 소프트치즈(브리·카망베르 등)",
+    reason:"저온살균되지 않은 부드러운 치즈는 리스테리아균 위험이 상대적으로 높아요.",
+    tip:"'저온살균(pasteurized)' 표기가 있는 제품인지 반드시 확인하세요."},
+  {names:["블루치즈","고르곤졸라"], result:"avoid", title:"블루치즈",
+    reason:"곰팡이로 숙성하는 특성상 리스테리아균이 자라기 좋은 환경이에요.",
+    tip:"완전히 가열 조리된 요리(피자, 파스타 등)에 소량 들어간 경우는 상대적으로 안전해요."},
+  {names:["체다치즈","파마산","슬라이스치즈","경성치즈"], result:"safe", title:"경성치즈(체다·파마산 등)",
+    reason:"수분이 적고 저온살균 우유로 만들어져 세균 번식 위험이 낮아요.",
+    tip:"일반적으로 안심하고 드셔도 괜찮아요."},
+  {names:["우유"], result:"safe", title:"우유(저온살균)",
+    reason:"국내 시판 우유는 대부분 저온살균 처리되어 안전해요.",
+    tip:"포장에 '살균' 또는 '멸균' 표기가 있는지 확인하는 습관을 들이세요."},
+  {names:["비살균우유","생우유","날우유"], result:"avoid", title:"비살균 생우유",
+    reason:"살균 과정을 거치지 않아 리스테리아 등 병원균 위험이 있어요.",
+    tip:"반드시 살균 또는 멸균 표시가 있는 우유를 선택하세요."},
+  {names:["요거트","그릭요거트"], result:"safe", title:"요거트",
+    reason:"살균된 원유로 만들어지며 단백질·칼슘 공급에 좋아요.",
+    tip:"당 함량이 높은 가공 요거트는 적당량만 섭취하세요."},
+  {names:["계란","완숙란","삶은계란"], result:"safe", title:"계란(완전히 익힌 것)",
+    reason:"완전히 익히면 살모넬라균 위험이 사라져 안전해요.",
+    tip:"흰자와 노른자가 완전히 굳을 때까지 익혀 드세요."},
+  {names:["반숙란","수란","반숙"], result:"avoid", title:"반숙란 / 수란",
+    reason:"덜 익은 노른자에는 살모넬라균이 남아있을 가능성이 있어요.",
+    tip:"신선하고 저온살균 표시가 있는 달걀이라면 위험이 낮지만, 기본적으로 완숙을 권장해요."},
+  {names:["햄","소시지","베이컨","델리미트","가공육"], result:"avoid", title:"햄 / 소시지 등 가공육",
+    reason:"냉장 상태 그대로(비가열) 섭취하면 리스테리아균 위험이 있어요.",
+    tip:"팬에 굽거나 전자레인지에 완전히 데운 뒤 먹으면 위험을 줄일 수 있어요."},
+  {names:["젓갈","생젓갈","오징어젓","명란"], result:"avoid", title:"젓갈류",
+    reason:"비가열 발효식품이라 세균 위험이 있고 나트륨 함량도 높아요.",
+    tip:"꼭 먹고 싶다면 신선도가 확실한 제품으로 아주 소량만 가끔 드세요."},
+  {names:["인삼","홍삼","수삼"], result:"avoid", title:"인삼 / 홍삼",
+    reason:"자궁 수축을 유발할 수 있다는 우려가 있어 특히 임신 초기엔 위험할 수 있어요.",
+    tip:"섭취하고 싶다면 반드시 산부인과 전문의와 상담 후 임신 중기 이후에 소량만 고려하세요."},
+  {names:["알로에","알로에즙"], result:"avoid", title:"알로에(즙)",
+    reason:"알로에의 라텍스 성분이 자궁 수축과 유산·조산 위험을 높일 수 있다는 보고가 있어요.",
+    tip:"먹는 알로에 제품은 피하고, 외용 젤 형태와는 구분해서 생각하세요."},
+  {names:["감초","감초차"], result:"avoid", title:"감초",
+    reason:"다량 섭취 시 조산 위험 및 아이의 스트레스 호르몬 조절에 영향을 줄 수 있다는 연구가 있어요.",
+    tip:"감초가 들어간 한약재나 차는 전문의와 상담 후 섭취하세요."},
+  {names:["블루베리"], result:"safe", title:"블루베리",
+    reason:"항산화 성분과 비타민이 풍부한 안전한 과일이에요. 특별히 주의할 성분이 없어요.",
+    tip:"깨끗이 씻어서 껍질째 드시면 식이섬유까지 챙길 수 있어요."},
+  {names:["딸기"], result:"safe", title:"딸기", reason:"비타민C가 풍부한 안전한 과일이에요.", tip:"농약 잔류 우려가 있으니 흐르는 물에 깨끗이 씻어 드세요."},
+  {names:["포도"], result:"safe", title:"포도", reason:"당분과 항산화 성분이 있는 안전한 과일이에요.", tip:"당 함량이 높은 편이라 임신성 당뇨가 있다면 양을 조절하세요."},
+  {names:["수박"], result:"safe", title:"수박", reason:"수분 보충에 좋은 안전한 과일이에요.", tip:"당분이 있는 편이라 한 번에 너무 많이 먹지 않는 것이 좋아요."},
+  {names:["참외"], result:"safe", title:"참외", reason:"수분과 비타민이 풍부한 안전한 과일이에요.", tip:"씨 주변은 소화가 잘 안 될 수 있어 적당히 제거하고 드셔도 좋아요."},
+  {names:["복숭아"], result:"safe", title:"복숭아", reason:"비타민과 식이섬유가 풍부한 안전한 과일이에요.", tip:"껍질에 알레르기 반응이 있는 사람도 있으니 처음엔 소량만 드셔보세요."},
+  {names:["키위"], result:"safe", title:"키위", reason:"비타민C와 엽산이 풍부해 임신 중 권장되는 과일이에요.", tip:"신맛이 강하니 공복에 많이 먹으면 속쓰림이 있을 수 있어요."},
+  {names:["망고"], result:"safe", title:"망고", reason:"비타민A, C가 풍부한 안전한 과일이에요.", tip:"당도가 높은 편이라 적당량만 드세요."},
+  {names:["아보카도"], result:"safe", title:"아보카도", reason:"엽산과 불포화지방산이 풍부해 임신 중 권장되는 식품이에요.", tip:"칼로리가 높은 편이니 하루 반 개 정도가 적당해요."},
+  {names:["배"], result:"safe", title:"배", reason:"수분과 식이섬유가 풍부한 안전한 과일이에요.", tip:"제한 없이 편하게 드셔도 좋아요."},
+  {names:["감"], result:"safe", title:"감", reason:"비타민이 풍부한 안전한 과일이에요.", tip:"떫은 감(홍시 전)은 탄닌 성분이 변비를 유발할 수 있어 적당히 드세요."},
+  {names:["멜론"], result:"safe", title:"멜론", reason:"수분과 비타민이 풍부한 안전한 과일이에요.", tip:"당도가 높은 편이니 적당량만 드세요."},
+  {names:["파인애플"], result:"safe", title:"파인애플",
+    reason:"'유산을 유발한다'는 속설이 있지만, 일반적인 섭취량에서는 과학적 근거가 부족해요.",
+    tip:"다만 한 번에 아주 많은 양을 먹는 것은 피하고 적당히 즐기세요."},
+  {names:["파파야","청파파야","덜익은파파야"], result:"avoid", title:"파파야",
+    reason:"덜 익은 청파파야는 자궁 수축을 유발할 수 있는 라텍스 성분이 많아요.",
+    tip:"잘 익은 노란 파파야는 상대적으로 안전하지만, 구분이 어렵다면 피하는 것이 안전해요."},
+  {names:["라즈베리잎차"], result:"avoid", title:"라즈베리잎차",
+    reason:"자궁 수축을 돕는다는 이유로 임신 후기에 쓰이기도 하지만, 초기·중기엔 조산 위험 우려가 있어요.",
+    tip:"임신 36주 이전에는 피하고, 이후에도 담당의와 상담 후 결정하세요."},
+  {names:["카모마일차","캐모마일"], result:"safe", title:"카모마일차",
+    reason:"소량은 대체로 안전한 것으로 알려져 있어요.",
+    tip:"하루 1잔 이내로, 장기간 지속 음용은 피하세요."},
+  {names:["콤부차","홍차버섯"], result:"avoid", title:"콤부차",
+    reason:"비살균 발효음료로 미량의 알코올과 병원균 위험이 있을 수 있어요.",
+    tip:"살균된 시판 제품이라도 임신 중에는 피하는 것이 안전해요."},
+  {names:["에너지드링크"], result:"avoid", title:"에너지드링크",
+    reason:"고농축 카페인과 각성 성분이 하루 권장 카페인량을 쉽게 초과시켜요.",
+    tip:"카페인이 필요할 땐 연한 커피나 차로 대체하세요."},
+  {names:["탄산음료","콜라"], result:"safe", title:"탄산음료(카페인 함유)",
+    reason:"카페인과 당분이 포함되어 있지만 적당량에서는 안전한 범위예요.",
+    tip:"카페인프리 제품을 선택하거나 하루 총 카페인량 안에서 섭취량을 관리하세요."},
+  {names:["초콜릿"], result:"safe", title:"초콜릿",
+    reason:"카페인과 테오브로민이 포함되어 있지만 적당량은 안전한 범위예요.",
+    tip:"다크초콜릿 소량 정도는 무난하게 즐기되, 다른 카페인 음료와 합산해서 관리하세요."},
+  {names:["미나리"], result:"safe", title:"미나리",
+    reason:"철분과 비타민이 풍부한 채소로, 익혀서 먹으면 특별히 주의할 성분이 없어요.",
+    tip:"논이나 습지에서 자라 기생충 알이 붙어있을 수 있으니 깨끗이 씻거나 데쳐서 드세요."},
+  {names:["미역","미역국"], result:"safe", title:"미역 / 미역국",
+    reason:"요오드와 칼슘이 풍부해 예로부터 산모에게 권장되어 온 대표적인 안전한 식품이에요.",
+    tip:"다만 요오드 과다 섭취를 피하려면 하루 한두 끼 정도로 적당히 드시는 게 좋아요."},
+  {names:["감태"], result:"safe", title:"감태",
+    reason:"조미김과 비슷한 해조류 가공식품으로, 특별히 주의할 성분이 없어요.",
+    tip:"조미료·기름·소금이 많이 들어간 제품일 수 있으니 나트륨 섭취량은 적당히 관리하세요."},
+  {names:["김","조미김","돌김"], result:"safe", title:"김",
+    reason:"미네랄이 풍부한 해조류로 안전하게 드실 수 있어요.",
+    tip:"조미김은 나트륨 함량이 높은 편이니 과다 섭취는 피하세요."},
+  {names:["다시마"], result:"safe", title:"다시마",
+    reason:"요오드가 풍부한 해조류로 일반적인 섭취량에서는 안전해요.",
+    tip:"국물 우려내는 용도로 적당히 사용하는 정도면 문제없어요."},
+  {names:["두부"], result:"safe", title:"두부",
+    reason:"식물성 단백질과 칼슘이 풍부한 안전한 식품이에요.",
+    tip:"제한 없이 편하게 섭취해도 좋아요."},
+  {names:["시금치"], result:"safe", title:"시금치",
+    reason:"철분과 엽산이 풍부해 임신 중 특히 권장되는 채소예요.",
+    tip:"잘 씻어서 익혀 먹으면 더욱 안전해요."},
+  {names:["브로콜리"], result:"safe", title:"브로콜리",
+    reason:"엽산, 식이섬유, 비타민C가 풍부한 대표적인 임신부 권장 채소예요.",
+    tip:"살짝 데쳐서 먹으면 소화에도 좋아요."},
+  {names:["사과"], result:"safe", title:"사과", reason:"식이섬유와 비타민이 풍부한 안전한 과일이에요.", tip:"껍질은 깨끗이 씻어서 함께 드시면 좋아요."},
+  {names:["바나나"], result:"safe", title:"바나나", reason:"칼륨이 풍부해 부종 완화에 도움이 되는 안전한 과일이에요.", tip:"간식이나 식사 대용으로 편하게 드세요."},
+  {names:["견과류","땅콩","아몬드","호두"], result:"safe", title:"견과류(땅콩 포함)",
+    reason:"과거엔 알레르기 우려로 회피가 권장됐지만, 최근에는 가족력이 없다면 오히려 섭취를 권장하는 추세예요.",
+    tip:"알레르기 가족력이 있다면 섭취 전 전문의와 상담하세요."},
+  {names:["낫토","청국장"], result:"safe", title:"낫토 / 청국장(조리된 것)",
+    reason:"발효 대두식품으로 단백질과 비타민K가 풍부해요.",
+    tip:"항응고제를 복용 중이라면 비타민K 함량 때문에 상담이 필요해요."},
+];
+
+// ⚠️ 아래 두 값을 본인 Supabase 프로젝트 값으로 교체하세요 (Settings → API 에서 확인)
+const SUPABASE_URL = "https://nnajhawgqxbcroyoehsf.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5uYWpoYXdncXhiY3JveW9laHNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5NzAyNjgsImV4cCI6MjA5ODU0NjI2OH0.ibESEnNgU2t6_5YW93uEkG9mMw2v_w4XxdmNUwfjt7s";
+
+let supabaseClient = null;
+try{
+  if(SUPABASE_URL !== "YOUR_SUPABASE_URL" && SUPABASE_ANON_KEY !== "YOUR_SUPABASE_ANON_KEY"){
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  } else {
+    console.warn("[food-check] Supabase 값이 아직 설정되지 않았어요. 공유 캐시 기능은 꺼진 상태로 로컬 DB만 작동합니다.");
+  }
+}catch(e){
+  console.error("[food-check] Supabase 클라이언트 초기화 실패:", e);
+  supabaseClient = null;
+}
+
+const state = { current:null };
+
+function getApiKey(){
+  return (localStorage.getItem("anthropic_api_key") || "").trim();
+}
+function setApiKey(key){
+  localStorage.setItem("anthropic_api_key", key.trim());
+}
+
+function normalize(s){
+  return s.toLowerCase().replace(/\s+/g,"");
+}
+
+function findFood(query){
+  const q = normalize(query);
+  if(!q) return null;
+
+  // 1. 완전 일치
+  let hit = FOODS.find(f => f.names.some(n => normalize(n) === q));
+  if(hit) return hit;
+
+  // 2. 조사만 붙은 경우 (예: "커피요", "고등어는") — 조사를 떼고 다시 완전 일치 확인
+  const JOSA = ["이나","이랑","으로","에서","까지","부터","이","가","은","는","을","를","도","만","과","와","랑","로","에","의","요","좀"];
+  for(const j of JOSA){
+    if(q.endsWith(j) && q.length > j.length){
+      const stripped = q.slice(0, q.length - j.length);
+      hit = FOODS.find(f => f.names.some(n => normalize(n) === stripped));
+      if(hit) return hit;
+    }
+  }
+
+  // 3. 마지막 글자가 중복된 오타 (예: "고등어" → "고등어어")
+  hit = FOODS.find(f => f.names.some(n => {
+    const nn = normalize(n);
+    return q.length === nn.length + 1 && q.startsWith(nn) && q[q.length - 1] === nn[nn.length - 1];
+  }));
+  if(hit) return hit;
+
+  // 4. 마지막 한 글자가 빠진 경우 (예: IME 조합 중 잘림 대비 안전망)
+  hit = FOODS.find(f => f.names.some(n => {
+    const nn = normalize(n);
+    return nn.length - q.length === 1 && nn.startsWith(q);
+  }));
+  if(hit) return hit;
+
+  return null;
+}
+
+const RESULT_META = {
+  safe:    {word:"안전해요", symbol:"o"},
+  avoid:   {word:"피하세요", symbol:"x"},
+  unknown: {word:"정보를 찾지 못했어요", symbol:"q"},
+};
+
+function stampSVG(kind, color){
+  const stroke = color;
+  const filterId = "rough-"+kind+"-"+Math.floor(Math.random()*99999);
+  const common = `
+    <defs>
+      <filter id="${filterId}" x="-20%" y="-20%" width="140%" height="140%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.045" numOctaves="2" seed="7" result="noise"/>
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="7"/>
+      </filter>
+    </defs>`;
+  if(kind === "o"){
+    return `<svg class="stamp-svg" viewBox="0 0 150 150" xmlns="http://www.w3.org/2000/svg">
+      ${common}
+      <circle cx="75" cy="75" r="52" fill="none" stroke="${stroke}" stroke-width="9" filter="url(#${filterId})" opacity="0.9"/>
+    </svg>`;
+  }
+  if(kind === "x"){
+    return `<svg class="stamp-svg" viewBox="0 0 150 150" xmlns="http://www.w3.org/2000/svg">
+      ${common}
+      <line x1="32" y1="32" x2="118" y2="118" stroke="${stroke}" stroke-width="10" stroke-linecap="round" filter="url(#${filterId})" opacity="0.9"/>
+      <line x1="118" y1="32" x2="32" y2="118" stroke="${stroke}" stroke-width="10" stroke-linecap="round" filter="url(#${filterId})" opacity="0.9"/>
+    </svg>`;
+  }
+  // unknown = question mark
+  return `<svg class="stamp-svg" viewBox="0 0 150 150" xmlns="http://www.w3.org/2000/svg">
+    ${common}
+    <text x="75" y="105" text-anchor="middle" font-family="Noto Serif KR, serif" font-weight="900" font-size="90" fill="${stroke}" filter="url(#${filterId})" opacity="0.9">?</text>
+  </svg>`;
+}
+
+function colorFor(result){
+  if(result==="safe") return getComputedColor("--safe");
+  if(result==="avoid") return getComputedColor("--avoid");
+  return getComputedColor("--unknown");
+}
+function getComputedColor(varName){
+  return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+}
+
+function showLoading(query){
+  const screenSearch = document.getElementById("screen-search");
+  const screenResult = document.getElementById("screen-result");
+  screenSearch.style.display = "none";
+  screenResult.classList.add("active");
+
+  document.getElementById("query-label").textContent = "// '" + query + "' 검색 결과";
+  document.getElementById("result-word").textContent = "확인하고 있어요...";
+  document.getElementById("result-word").style.color = "var(--ink-soft)";
+  document.getElementById("result-name").textContent = "";
+  document.getElementById("ai-badge").style.display = "none";
+
+  const stampZone = document.getElementById("stamp-zone");
+  stampZone.innerHTML = '<div class="spinner"></div><div class="loading-text">DB에 없는 재료라 AI에게 실시간으로 물어보는 중</div>';
+
+  document.getElementById("result-reason").textContent = "";
+  document.getElementById("result-tip").textContent = "";
+}
+
+function showResult(query, food, errorType){
+  const screenSearch = document.getElementById("screen-search");
+  const screenResult = document.getElementById("screen-result");
+  screenSearch.style.display = "none";
+  screenResult.classList.add("active");
+
+  const result = food ? food.result : "unknown";
+  const meta = RESULT_META[result];
+  const color = colorFor(result);
+
+  document.getElementById("query-label").textContent = "// '" + query + "' 검색 결과";
+  document.getElementById("result-word").textContent = meta.word;
+  document.getElementById("result-word").style.color = color;
+  document.getElementById("result-name").textContent = food ? food.title : query;
+
+  const badge = document.getElementById("ai-badge");
+  badge.style.display = (food && food.ai) ? "inline-flex" : "none";
+
+  const stampZone = document.getElementById("stamp-zone");
+  stampZone.innerHTML = stampSVG(meta.symbol, color);
+  // trigger animation
+  requestAnimationFrame(()=>{
+    const svg = stampZone.querySelector("svg");
+    void svg.offsetWidth;
+    svg.classList.add("pop");
+  });
+
+  const reasonEl = document.getElementById("result-reason");
+  const tipEl = document.getElementById("result-tip");
+  if(food){
+    reasonEl.textContent = food.reason;
+    tipEl.textContent = "TIP  " + food.tip;
+  } else if(errorType === "not_food"){
+    reasonEl.textContent = "AI가 이 검색어를 식품/재료로 인식하지 못했어요. 재료명을 정확히 입력했는지 확인해주세요.";
+    tipEl.textContent = "TIP  다른 표현으로 다시 검색해보시거나, 정 안 되면 산부인과 전문의·영양사에게 직접 문의해보세요.";
+  } else if(errorType){
+    reasonEl.textContent = "일시적인 오류로 AI 조회에 실패했어요 (원인: " + errorType + "). 재료 문제가 아니라 네트워크나 API 쪽 문제일 가능성이 커요.";
+    tipEl.textContent = "TIP  잠시 후 다시 검색해보시거나, 콘솔(Console Messages)의 [food-check] 로그를 확인해주세요.";
+  } else {
+    reasonEl.textContent = "아직 이 재료에 대한 정보가 없어요. 잘못된 정보를 드리는 것보다 모른다고 말씀드리는 게 안전하다고 판단했어요.";
+    tipEl.textContent = "TIP  정확한 재료명으로 다시 검색해보시거나, 산부인과 전문의·영양사에게 직접 문의해보세요.";
+  }
+}
+
+async function fetchAIJudgment(query){
+  const apiKey = getApiKey();
+  if(!apiKey){
+    return { error: "no_key" };
+  }
+  try{
+    const resp = await fetch("https://api.anthropic.com/v1/messages", {
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json",
+        "x-api-key": apiKey,
+        "anthropic-version":"2023-06-01",
+        "anthropic-dangerous-direct-browser-access":"true"
+      },
+      body: JSON.stringify({
+        model:"claude-sonnet-4-6",
+        max_tokens:400,
+        messages:[{
+          role:"user",
+          content: "당신은 임신부 식품 안전성 정보를 제공하는 도우미입니다. 아래 재료에 대해 임신부가 섭취해도 되는지 O 또는 X로만 판단해주세요.\n\n재료: \"" + query + "\"\n\n다음 JSON 형식으로만 답하세요. 다른 텍스트, 설명, 마크다운 코드블록 없이 순수 JSON 객체 하나만 출력하세요.\n\n{\"valid\": true 또는 false (식품/재료로 인식 가능한지), \"result\": \"safe\" 또는 \"avoid\" (중간 단계 없이 둘 중 하나로만 판단. 조건부로 괜찮은 경우는 reason과 tip에서 조건을 설명하되 result는 더 안전한 쪽 기준으로 정하세요), \"title\": \"재료명 짧게\", \"reason\": \"왜 그런지 한국어로 2문장 이내\", \"tip\": \"실천 팁 한국어로 1문장\"}\n\n식품, 음료, 재료가 아니거나 판단이 불확실하면 valid를 false로 하세요."
+        }]
+      })
+    });
+    console.log("[food-check] HTTP status:", resp.status, resp.statusText);
+
+    const rawText = await resp.text();
+    console.log("[food-check] raw response:", rawText.slice(0, 800));
+
+    if(resp.status === 401){
+      console.error("[food-check] invalid API key");
+      return { error: "invalid_key" };
+    }
+    if(!resp.ok){
+      console.error("[food-check] API returned non-OK status:", resp.status);
+      return { error: "api_error" };
+    }
+
+    let data;
+    try{
+      data = JSON.parse(rawText);
+    }catch(parseErr){
+      console.error("[food-check] top-level JSON.parse failed:", parseErr);
+      return { error: "parse_error" };
+    }
+
+    const textBlock = (data.content || []).find(b => b.type === "text");
+    if(!textBlock){
+      console.error("[food-check] no text block in response. content was:", data.content);
+      return { error: "no_text_block" };
+    }
+    let clean = textBlock.text.trim();
+    clean = clean.replace(/^```json/i,"").replace(/^```/,"").replace(/```$/,"").trim();
+    let parsed;
+    try{
+      parsed = JSON.parse(clean);
+    }catch(parseErr){
+      console.error("[food-check] inner JSON.parse failed. text was:", clean, parseErr);
+      return { error: "parse_error" };
+    }
+    if(!parsed.valid) return { error: "not_food" };
+    if(!["safe","avoid"].includes(parsed.result)) return { error: "not_food" };
+    return {
+      result: parsed.result,
+      title: parsed.title || query,
+      reason: parsed.reason || "",
+      tip: parsed.tip || "",
+      ai: true
+    };
+  }catch(e){
+    console.error("[food-check] fetch/network error:", e);
+    return { error: "network_error" };
+  }
+}
+
+function resetToSearch(){
+  document.getElementById("screen-search").style.display = "block";
+  document.getElementById("screen-result").classList.remove("active");
+  document.getElementById("query-input").value = "";
+  document.getElementById("query-input").focus();
+}
+
+async function getCachedFood(normQuery){
+  if(!supabaseClient) return null;
+  try{
+    const { data, error } = await supabaseClient
+      .from("foods")
+      .select("*")
+      .eq("query_key", normQuery)
+      .maybeSingle();
+    if(error){
+      console.error("[food-check] supabase select error:", error);
+      return null;
+    }
+    if(!data) return null;
+    return {
+      result: data.result,
+      title: data.title,
+      reason: data.reason,
+      tip: data.tip,
+      ai: true
+    };
+  }catch(e){
+    console.error("[food-check] supabase select failed:", e);
+    return null;
+  }
+}
+
+async function cacheFood(normQuery, foodObj){
+  if(!supabaseClient) return;
+  try{
+    const { error } = await supabaseClient
+      .from("foods")
+      .upsert({
+        query_key: normQuery,
+        title: foodObj.title,
+        result: foodObj.result,
+        reason: foodObj.reason,
+        tip: foodObj.tip,
+        source: "ai"
+      }, { onConflict: "query_key" });
+    if(error) console.error("[food-check] supabase upsert error:", error);
+  }catch(e){
+    console.error("[food-check] cache save failed:", e);
+  }
+}
+
+function showKeyNeededResult(query, invalid){
+  const screenSearch = document.getElementById("screen-search");
+  const screenResult = document.getElementById("screen-result");
+  screenSearch.style.display = "none";
+  screenResult.classList.add("active");
+
+  document.getElementById("query-label").textContent = "// '" + query + "' 검색 결과";
+  document.getElementById("result-word").textContent = invalid ? "API 키를 확인해주세요" : "API 키가 필요해요";
+  document.getElementById("result-word").style.color = colorFor("unknown");
+  document.getElementById("result-name").textContent = "";
+  document.getElementById("ai-badge").style.display = "none";
+
+  const stampZone = document.getElementById("stamp-zone");
+  stampZone.innerHTML = stampSVG("q", colorFor("unknown"));
+  requestAnimationFrame(()=>{
+    const svg = stampZone.querySelector("svg");
+    void svg.offsetWidth;
+    svg.classList.add("pop");
+  });
+
+  document.getElementById("result-reason").textContent = invalid
+    ? "저장된 API 키가 유효하지 않은 것 같아요. 설정에서 키를 다시 확인해주세요."
+    : "DB에 없는 재료라 AI로 확인하려면 먼저 설정(⚙)에서 Anthropic API 키를 입력해야 해요.";
+  document.getElementById("result-tip").textContent = "TIP  검색 화면으로 돌아가 오른쪽 위 톱니바퀴(⚙)를 눌러 키를 입력해주세요.";
+}
+
+async function handleQuery(q){
+  if(!q) return;
+  const normQ = normalize(q);
+
+  const food = findFood(q);
+  if(food){
+    showResult(q, food);
+    return;
+  }
+
+  // 부부가 공유하는 Supabase 캐시부터 확인 — 근처에서 없으면 스피너 없이 바로 반환
+  const cached = await getCachedFood(normQ);
+  if(cached){
+    showResult(q, cached);
+    return;
+  }
+
+  if(!getApiKey()){
+    showKeyNeededResult(q, false);
+    return;
+  }
+
+  showLoading(q);
+  const aiFood = await fetchAIJudgment(q);
+
+  if(aiFood && aiFood.error === "invalid_key"){
+    showKeyNeededResult(q, true);
+    return;
+  }
+  if(aiFood && !aiFood.error){
+    cacheFood(normQ, aiFood);
+    showResult(q, aiFood);
+    return;
+  }
+  showResult(q, null, aiFood ? aiFood.error : "unknown_error");
+}
+
+function runSearch(){
+  const input = document.getElementById("query-input");
+  const q = input.value.trim();
+  if(!q) { input.focus(); return; }
+  handleQuery(q);
+}
+
+document.getElementById("go-btn").addEventListener("click", runSearch);
+
+// 설정 패널: API 키 입력/저장
+const settingsBtn = document.getElementById("settings-btn");
+const settingsPanel = document.getElementById("settings-panel");
+const apiKeyInput = document.getElementById("api-key-input");
+const settingsStatus = document.getElementById("settings-status");
+
+function refreshSettingsStatus(){
+  const key = getApiKey();
+  if(key){
+    settingsStatus.textContent = "✓ 키가 저장되어 있어요 (이 기기에만)";
+    settingsStatus.className = "settings-status ok";
+    apiKeyInput.value = key;
+  } else {
+    settingsStatus.textContent = "아직 키가 없어요. DB에 없는 재료는 검색이 안 돼요.";
+    settingsStatus.className = "settings-status warn";
+  }
+}
+refreshSettingsStatus();
+
+settingsBtn.addEventListener("click", ()=>{
+  settingsPanel.classList.toggle("open");
+});
+
+document.getElementById("settings-save-btn").addEventListener("click", ()=>{
+  const val = apiKeyInput.value.trim();
+  if(!val){
+    settingsStatus.textContent = "키를 입력해주세요.";
+    settingsStatus.className = "settings-status warn";
+    return;
+  }
+  setApiKey(val);
+  refreshSettingsStatus();
+});
+
+let isComposing = false;
+const queryInput = document.getElementById("query-input");
+queryInput.addEventListener("compositionstart", ()=>{ isComposing = true; });
+queryInput.addEventListener("compositionend", ()=>{ isComposing = false; });
+queryInput.addEventListener("keydown", (e)=>{
+  // 한글(IME) 조합 중에 눌린 Enter는 무시 — 글자 조합이 아직 안 끝난 상태라
+  // 그대로 검색하면 마지막 글자가 잘리거나 아예 반응하지 않을 수 있어요.
+  if(e.key === "Enter" && !isComposing && e.keyCode !== 229){
+    runSearch();
+  }
+});
+document.getElementById("back-btn").addEventListener("click", resetToSearch);
+document.getElementById("retry-btn").addEventListener("click", resetToSearch);
+</script>
+</body>
+</html>
