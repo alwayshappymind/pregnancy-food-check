@@ -789,7 +789,7 @@ function showLoading(query){
   document.getElementById("result-tip").textContent = "";
 }
 
-function showResult(query, food, errorType){
+function showResult(query, food, errorType, errorDetail){
   const screenSearch = document.getElementById("screen-search");
   const screenResult = document.getElementById("screen-result");
   screenSearch.style.display = "none";
@@ -825,8 +825,8 @@ function showResult(query, food, errorType){
     reasonEl.textContent = "AI가 이 검색어를 식품/재료로 인식하지 못했어요. 재료명을 정확히 입력했는지 확인해주세요.";
     tipEl.textContent = "TIP  다른 표현으로 다시 검색해보시거나, 정 안 되면 산부인과 전문의·영양사에게 직접 문의해보세요.";
   } else if(errorType){
-    reasonEl.textContent = "일시적인 오류로 AI 조회에 실패했어요 (원인: " + errorType + "). 재료 문제가 아니라 네트워크나 API 쪽 문제일 가능성이 커요.";
-    tipEl.textContent = "TIP  잠시 후 다시 검색해보시거나, 콘솔(Console Messages)의 [food-check] 로그를 확인해주세요.";
+    reasonEl.textContent = "일시적인 오류로 AI 조회에 실패했어요 (원인: " + errorType + ")" + (errorDetail ? " · 상세: " + errorDetail : "") + ". 재료 문제가 아니라 네트워크나 API 쪽 문제일 가능성이 커요.";
+    tipEl.textContent = "TIP  잠시 후 다시 검색해보세요. 계속 반복되면 위 상세 메시지를 그대로 캡처해서 보내주세요.";
   } else {
     reasonEl.textContent = "아직 이 재료에 대한 정보가 없어요. 잘못된 정보를 드리는 것보다 모른다고 말씀드리는 게 안전하다고 판단했어요.";
     tipEl.textContent = "TIP  정확한 재료명으로 다시 검색해보시거나, 산부인과 전문의·영양사에게 직접 문의해보세요.";
@@ -861,21 +861,25 @@ async function fetchAIJudgment(query){
     const rawText = await resp.text();
     console.log("[food-check] raw response:", rawText.slice(0, 800));
 
+    let parsedRaw = null;
+    try{ parsedRaw = JSON.parse(rawText); }catch(e){ /* not JSON, ignore */ }
+    const apiMessage = (parsedRaw && parsedRaw.error && parsedRaw.error.message)
+      ? parsedRaw.error.message
+      : rawText.slice(0, 150);
+
     if(resp.status === 401){
       console.error("[food-check] invalid API key");
-      return { error: "invalid_key" };
+      return { error: "invalid_key", detail: apiMessage };
     }
     if(!resp.ok){
-      console.error("[food-check] API returned non-OK status:", resp.status);
-      return { error: "api_error" };
+      console.error("[food-check] API returned non-OK status:", resp.status, apiMessage);
+      return { error: "api_error_" + resp.status, detail: apiMessage };
     }
 
-    let data;
-    try{
-      data = JSON.parse(rawText);
-    }catch(parseErr){
-      console.error("[food-check] top-level JSON.parse failed:", parseErr);
-      return { error: "parse_error" };
+    let data = parsedRaw;
+    if(!data){
+      console.error("[food-check] top-level JSON.parse failed");
+      return { error: "parse_error", detail: rawText.slice(0, 150) };
     }
 
     const textBlock = (data.content || []).find(b => b.type === "text");
@@ -890,7 +894,7 @@ async function fetchAIJudgment(query){
       parsed = JSON.parse(clean);
     }catch(parseErr){
       console.error("[food-check] inner JSON.parse failed. text was:", clean, parseErr);
-      return { error: "parse_error" };
+      return { error: "parse_error", detail: clean.slice(0, 150) };
     }
     if(!parsed.valid) return { error: "not_food" };
     if(!["safe","avoid"].includes(parsed.result)) return { error: "not_food" };
@@ -903,7 +907,7 @@ async function fetchAIJudgment(query){
     };
   }catch(e){
     console.error("[food-check] fetch/network error:", e);
-    return { error: "network_error" };
+    return { error: "network_error", detail: (e && e.message) ? e.message : String(e) };
   }
 }
 
@@ -1019,7 +1023,7 @@ async function handleQuery(q){
     showResult(q, aiFood);
     return;
   }
-  showResult(q, null, aiFood ? aiFood.error : "unknown_error");
+  showResult(q, null, aiFood ? aiFood.error : "unknown_error", aiFood ? aiFood.detail : null);
 }
 
 function runSearch(){
