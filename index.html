@@ -523,6 +523,18 @@ const FOODS = [
   {names:["미나리"], result:"safe", title:"미나리",
     reason:"철분과 비타민이 풍부한 채소로, 익혀서 먹으면 특별히 주의할 성분이 없어요.",
     tip:"논이나 습지에서 자라 기생충 알이 붙어있을 수 있으니 깨끗이 씻거나 데쳐서 드세요."},
+  {names:["미역","미역국"], result:"safe", title:"미역 / 미역국",
+    reason:"요오드와 칼슘이 풍부해 예로부터 산모에게 권장되어 온 대표적인 안전한 식품이에요.",
+    tip:"다만 요오드 과다 섭취를 피하려면 하루 한두 끼 정도로 적당히 드시는 게 좋아요."},
+  {names:["감태"], result:"safe", title:"감태",
+    reason:"조미김과 비슷한 해조류 가공식품으로, 특별히 주의할 성분이 없어요.",
+    tip:"조미료·기름·소금이 많이 들어간 제품일 수 있으니 나트륨 섭취량은 적당히 관리하세요."},
+  {names:["김","조미김","돌김"], result:"safe", title:"김",
+    reason:"미네랄이 풍부한 해조류로 안전하게 드실 수 있어요.",
+    tip:"조미김은 나트륨 함량이 높은 편이니 과다 섭취는 피하세요."},
+  {names:["다시마"], result:"safe", title:"다시마",
+    reason:"요오드가 풍부한 해조류로 일반적인 섭취량에서는 안전해요.",
+    tip:"국물 우려내는 용도로 적당히 사용하는 정도면 문제없어요."},
   {names:["두부"], result:"safe", title:"두부",
     reason:"식물성 단백질과 칼슘이 풍부한 안전한 식품이에요.",
     tip:"제한 없이 편하게 섭취해도 좋아요."},
@@ -670,7 +682,7 @@ function showLoading(query){
   document.getElementById("result-tip").textContent = "";
 }
 
-function showResult(query, food){
+function showResult(query, food, errorType){
   const screenSearch = document.getElementById("screen-search");
   const screenResult = document.getElementById("screen-result");
   screenSearch.style.display = "none";
@@ -702,8 +714,14 @@ function showResult(query, food){
   if(food){
     reasonEl.textContent = food.reason;
     tipEl.textContent = "TIP  " + food.tip;
+  } else if(errorType === "not_food"){
+    reasonEl.textContent = "AI가 이 검색어를 식품/재료로 인식하지 못했어요. 재료명을 정확히 입력했는지 확인해주세요.";
+    tipEl.textContent = "TIP  다른 표현으로 다시 검색해보시거나, 정 안 되면 산부인과 전문의·영양사에게 직접 문의해보세요.";
+  } else if(errorType){
+    reasonEl.textContent = "일시적인 오류로 AI 조회에 실패했어요 (원인: " + errorType + "). 재료 문제가 아니라 네트워크나 API 쪽 문제일 가능성이 커요.";
+    tipEl.textContent = "TIP  잠시 후 다시 검색해보시거나, 콘솔(Console Messages)의 [food-check] 로그를 확인해주세요.";
   } else {
-    reasonEl.textContent = "AI 조회에도 실패했거나 식품으로 인식하지 못했어요. 잘못된 정보를 드리는 것보다 모른다고 말씀드리는 게 안전하다고 판단했어요.";
+    reasonEl.textContent = "아직 이 재료에 대한 정보가 없어요. 잘못된 정보를 드리는 것보다 모른다고 말씀드리는 게 안전하다고 판단했어요.";
     tipEl.textContent = "TIP  정확한 재료명으로 다시 검색해보시거나, 산부인과 전문의·영양사에게 직접 문의해보세요.";
   }
 }
@@ -894,7 +912,7 @@ async function handleQuery(q){
     showResult(q, aiFood);
     return;
   }
-  showResult(q, null);
+  showResult(q, null, aiFood ? aiFood.error : "unknown_error");
 }
 
 function runSearch(){
